@@ -480,9 +480,6 @@ body{background:#000;color:#fff;font-family:-apple-system,'SF Pro Display',sans-
 #ctr{font-size:10.5px;color:rgba(235,235,245,.28);font-variant-numeric:tabular-nums}
 .track{display:flex;align-items:center;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
 .track::-webkit-scrollbar{display:none}
-.dot{width:22px;height:22px;min-width:22px;border-radius:50%;background:rgba(255,255,255,.1);cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,.65);}
-.dot.active{background:#0a84ff;transform:scale(1.25);color:#fff;}
-.dot.past{background:rgba(10,132,255,.32);color:#fff;}
 .node{flex-shrink:0;width:175px;opacity:0;transform:translateY(20px) scale(.95);
   transition:opacity .45s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
 .node.vis{opacity:1;transform:none}
@@ -522,6 +519,7 @@ body{background:#000;color:#fff;font-family:-apple-system,'SF Pro Display',sans-
   <div class="hdr">
     <span class="ttl">Attack story &middot; Step by step</span>
     <div class="ctrls">
+      <span id="stepLbl"></span>
       <button id="prevBtn" onclick="prev()" disabled>&#9664;</button>
       <button id="playBtn" onclick="toggle()">Play</button>
       <button id="nextBtn" onclick="nextStep()" disabled>&#9654;</button>
@@ -554,10 +552,14 @@ DATA.forEach((d,i)=>{
 });
 let cur=-1,playing=false,tmr=null;
 function upd(){
-  document.getElementById("ctr").textContent=Math.max(0,cur+1)+" / "+DATA.length;
-  document.getElementById("stepLbl").textContent = "Step "+Math.max(0,cur+1)+" of "+DATA.length;
+  const count = DATA.length;
+  const currentStep = Math.max(0, cur + 1);
+  document.getElementById("ctr").textContent = currentStep + " / " + count;
+  if(document.getElementById("stepLbl")) {
+      document.getElementById("stepLbl").textContent = "Step " + currentStep + " of " + count;
+  }
   document.getElementById("prevBtn").disabled = cur <= 0;
-  document.getElementById("nextBtn").disabled = cur >= DATA.length-1;
+  document.getElementById("nextBtn").disabled = cur >= count - 1;
 }
 function show(idx){
   cur=idx;upd();
@@ -577,60 +579,28 @@ function show(idx){
     else if(i>0)document.getElementById("c"+i).classList.remove("vis");
   });
 }
-function jump(i){
-  clearInterval(tmr);
-  playing=false;
-  document.getElementById("playBtn").textContent="Play";
-  for(let j=0;j<=i;j++)show(j);
-}
-function prev(){
-  if(cur>0){
-    clearInterval(tmr);
-    playing=false;
-    document.getElementById("playBtn").textContent="&#9654; Play";
-    show(cur-1);
-  }
-}
-function nextStep(){
-  if(cur < DATA.length-1){
-    clearInterval(tmr);
-    playing=false;
-    document.getElementById("playBtn").textContent="Play";
-    show(cur+1);
-  }
-}
+function jump(i){ clearInterval(tmr); playing=false; document.getElementById("playBtn").textContent="Play"; show(i); }
+function prev(){ if(cur>0){ clearInterval(tmr); playing=false; document.getElementById("playBtn").textContent="Play"; show(cur-1); } }
+function nextStep(){ if(cur < DATA.length-1){ clearInterval(tmr); playing=false; document.getElementById("playBtn").textContent="Play"; show(cur+1); } }
 function toggle(){
-  if(playing){
-    clearInterval(tmr);
-    playing=false;
-    document.getElementById("playBtn").textContent="Play";
-  }
+  if(playing){ clearInterval(tmr); playing=false; document.getElementById("playBtn").textContent="Play"; }
   else{
-    if(cur>=DATA.length-1)cur=-1;
+    if(cur>=DATA.length-1) cur=-1;
     playing=true;
     document.getElementById("playBtn").textContent="Pause";
     tmr=setInterval(()=>{
-      if(cur<DATA.length-1){show(cur+1);}
-      else{clearInterval(tmr);playing=false;document.getElementById("playBtn").textContent="Play";}
+      if(cur<DATA.length-1) show(cur+1);
+      else { clearInterval(tmr); playing=false; document.getElementById("playBtn").textContent="Play"; }
     },1200);
   }
 }
 document.addEventListener("keydown", (event) => {
-  if (event.defaultPrevented) return;
-  if (event.key === "ArrowLeft") {
-    event.preventDefault();
-    prev();
-  } else if (event.key === "ArrowRight") {
-    event.preventDefault();
-    nextStep();
-  } else if (event.key === " " || event.key === "Spacebar") {
-    event.preventDefault();
-    toggle();
-  }
+  if (event.key === "ArrowLeft") prev();
+  else if (event.key === "ArrowRight") nextStep();
+  else if (event.key === " ") { event.preventDefault(); toggle(); }
 });
 upd();setTimeout(toggle,700);
 </script></body></html>"""
-
 
 def render_attack_story(timeline: list) -> None:
     if not timeline:
