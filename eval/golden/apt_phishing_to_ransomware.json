@@ -1,0 +1,28 @@
+{
+  "name": "apt_phishing_to_ransomware",
+  "description": "Macro-laced invoice email → PowerShell loader → credential dump → lateral movement via PsExec → ransomware deployment",
+  "log_file": "data/samples/apt_phishing_to_ransomware.log",
+  "expected_techniques": [
+    "T1566.001",
+    "T1204.002",
+    "T1059.001",
+    "T1547.001",
+    "T1071.001",
+    "T1003",
+    "T1021.002",
+    "T1486",
+    "T1490",
+    "T1087",
+    "T1018"
+  ],
+  "expected_severity": "critical",
+  "expected_phases": [
+    "initial_access",
+    "execution",
+    "persistence",
+    "credential_access",
+    "discovery",
+    "lateral_movement",
+    "impact"
+  ]
+}

@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with ruff
+        run: ruff check src tests
+
+      - name: Run tests
+        run: PYTHONPATH=src pytest --cov=neural_architect --cov-report=term
+
+      - name: Validate sample data is parseable
+        run: |
+          PYTHONPATH=src python -c "
+          from pathlib import Path
+          from neural_architect.core import log_parser
+          for p in Path('data/samples').glob('*.log'):
+              fmt = log_parser.detect_format(p.read_text())
+              evs = log_parser.normalize(p.read_text())
+              print(f'{p.name}: format={fmt} events={len(evs)}')
+              assert evs, f'{p.name} produced no events'
+          "

@@ -1,0 +1,11 @@
+{"@timestamp":"2026-04-09T22:14:02Z","host":"FILE-SRV-03","event":"file_access","user":"DOMAIN\\rmurphy","path":"\\\\fs03\\restricted\\customer_pii.csv","action":"read","size":182334}
+{"@timestamp":"2026-04-09T22:14:18Z","host":"FILE-SRV-03","event":"file_access","user":"DOMAIN\\rmurphy","path":"\\\\fs03\\restricted\\salary_band_2026.xlsx","action":"read","size":48211}
+{"@timestamp":"2026-04-09T22:14:21Z","host":"FILE-SRV-03","event":"file_access","user":"DOMAIN\\rmurphy","path":"\\\\fs03\\restricted\\m_and_a_pipeline.docx","action":"read","size":92301}
+{"@timestamp":"2026-04-09T22:15:44Z","host":"DLP-PROXY","event":"http_request","user":"DOMAIN\\rmurphy","method":"POST","url":"https://upload.transferxyz.io/api/v2/file","bytes_out":182334,"category":"file_sharing"}
+{"@timestamp":"2026-04-09T22:16:02Z","host":"DLP-PROXY","event":"http_request","user":"DOMAIN\\rmurphy","method":"POST","url":"https://upload.transferxyz.io/api/v2/file","bytes_out":48211,"category":"file_sharing"}
+{"@timestamp":"2026-04-09T22:16:18Z","host":"DLP-PROXY","event":"http_request","user":"DOMAIN\\rmurphy","method":"POST","url":"https://upload.transferxyz.io/api/v2/file","bytes_out":92301,"category":"file_sharing"}
+{"@timestamp":"2026-04-09T22:18:33Z","host":"WIN-LT-RM01","event":"usb_connect","user":"DOMAIN\\rmurphy","device":"SanDisk Ultra 64GB","serial":"4C530001120612102365"}
+{"@timestamp":"2026-04-09T22:19:01Z","host":"WIN-LT-RM01","event":"file_copy","user":"DOMAIN\\rmurphy","source":"C:\\Users\\rmurphy\\Documents\\customer_pii.csv","destination":"E:\\customer_pii.csv","size":182334}
+{"@timestamp":"2026-04-09T22:19:14Z","host":"WIN-LT-RM01","event":"file_copy","user":"DOMAIN\\rmurphy","source":"C:\\Users\\rmurphy\\Documents\\salary_band_2026.xlsx","destination":"E:\\salary_band_2026.xlsx","size":48211}
+{"@timestamp":"2026-04-09T22:21:08Z","host":"WIN-LT-RM01","event":"usb_disconnect","user":"DOMAIN\\rmurphy","device":"SanDisk Ultra 64GB","serial":"4C530001120612102365"}
+{"@timestamp":"2026-04-10T07:48:02Z","host":"HR-SYSTEM","event":"hr_event","user":"DOMAIN\\rmurphy","detail":"resignation submitted, last day 2026-04-23"}

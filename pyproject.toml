@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neural-architect"
+version = "0.2.0"
+description = "AI-powered digital forensics: reconstruct attack chains and map to MITRE ATT&CK in real time using Gemini 2.5 Flash."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Ravioli201" }]
+keywords = ["cybersecurity", "incident-response", "mitre-attack", "gemini", "digital-forensics", "soc"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Information Technology",
+    "Topic :: Security",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/Ravioli201/neural-architect"
+Issues = "https://github.com/Ravioli201/neural-architect/issues"
+
+[project.scripts]
+neural-architect = "neural_architect.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"

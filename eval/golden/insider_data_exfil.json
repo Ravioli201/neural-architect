@@ -1,0 +1,17 @@
+{
+  "name": "insider_data_exfil",
+  "description": "Departing employee accessing restricted files, exfiltrating to cloud upload service and to USB",
+  "log_file": "data/samples/insider_data_exfil.log",
+  "expected_techniques": [
+    "T1078.002",
+    "T1530",
+    "T1213",
+    "T1052.001",
+    "T1567.002"
+  ],
+  "expected_severity": "high",
+  "expected_phases": [
+    "collection",
+    "exfiltration"
+  ]
+}
