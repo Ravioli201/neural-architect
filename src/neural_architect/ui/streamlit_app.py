@@ -1,6 +1,3 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 """Streamlit UI for Neural Architect.
 
 A polished demo surface for the analyzer:
@@ -9,12 +6,14 @@ A polished demo surface for the analyzer:
 - timeline view, MITRE heatmap, IOC table
 - one-click STIX / Markdown export
 """
-
 from __future__ import annotations
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
 import json
 import os
-from pathlib import Path
 
 import plotly.graph_objects as go
 import streamlit as st
