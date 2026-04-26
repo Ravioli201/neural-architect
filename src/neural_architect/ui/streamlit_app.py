@@ -1,20 +1,19 @@
 """Streamlit UI for Neural Architect.
-
 A polished demo surface for the analyzer:
-- file upload OR sample dataset OR paste-in
-- live-streaming "thinking" status
-- timeline view, MITRE heatmap, IOC table
-- one-click STIX / Markdown export
+- Multi-file upload or sample dataset
+- 3D Attack Graph & MITRE Heatmap
+- Interactive SOC Analyst Chatbot
+- STIX / Markdown export
 """
 from __future__ import annotations
-
 import sys
 from pathlib import Path
+
+# Fix the path for Streamlit Cloud
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
 import json
 import os
-
 import plotly.graph_objects as go
 import streamlit as st
 from dotenv import load_dotenv
@@ -24,9 +23,10 @@ from neural_architect.core.analyzer import Analyzer
 from neural_architect.core.models import AttackChain, KillChainPhase, Severity
 from neural_architect.exporters import to_markdown_report, to_stix_bundle
 from neural_architect.llm.gemini_client import GeminiClient, GeminiUnavailableError
+from neural_architect.ui.visualizer import render_3d_attack_graph
+from neural_architect.ui.chatbot import SOCChatbot
 
 load_dotenv()
-
 SAMPLES_DIR = Path(__file__).resolve().parents[3] / "data" / "samples"
 
 SEVERITY_COLOR = {
@@ -43,18 +43,14 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-# ----------------------------- styles ---------------------------------------
-
+# ----------------------------- Styles ---------------------------------------
 st.markdown(
     """
     <style>
       .na-hero {
           background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #312e81 100%);
           padding: 2rem 2rem 1.5rem 2rem;
-          border-radius: 16px;
-          color: #e2e8f0;
-          margin-bottom: 1rem;
+          border-radius: 16px; color: #e2e8f0; margin-bottom: 1rem;
       }
       .na-hero h1 { color: #f1f5f9; margin: 0; font-size: 2.2rem; }
       .na-hero p  { color: #94a3b8; margin: .5rem 0 0 0; font-size: 1.05rem; }
@@ -63,11 +59,8 @@ st.markdown(
           background:#1e293b; color:#cbd5e1; font-size:.78rem; margin-right:6px;
       }
       .na-event {
-          border-left: 3px solid #6366f1;
-          padding: .6rem .9rem;
-          margin: .5rem 0;
-          background: rgba(99,102,241,0.06);
-          border-radius: 6px;
+          border-left: 3px solid #6366f1; padding: .6rem .9rem; margin: .5rem 0;
+          background: rgba(99,102,241,0.06); border-radius: 6px;
       }
       .na-tech {
           font-family: ui-monospace, SFMono-Regular, monospace;
@@ -78,264 +71,161 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-# ----------------------------- sidebar --------------------------------------
-
+# ----------------------------- Sidebar --------------------------------------
 with st.sidebar:
     st.markdown("### ⚙️ Configuration")
-    # Resolve the API key in priority order: Streamlit secrets → env var → empty.
-    # Accept either GEMINI_API_KEY or GOOGLE_API_KEY (Google's SDK uses both names).
-    _secret_key = ""
-    try:
-        _secret_key = (
-            st.secrets.get("GEMINI_API_KEY", "")
-            or st.secrets.get("GOOGLE_API_KEY", "")
-        )
-    except Exception:
-        pass
-    api_key = (
-        _secret_key
-        or os.environ.get("GEMINI_API_KEY", "")
-        or os.environ.get("GOOGLE_API_KEY", "")
-    )
+    
+    # Auto-resolve API Key
+    _secret_key = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
+    api_key = _secret_key or st.text_input("Gemini API key", value=os.environ.get("GEMINI_API_KEY", ""), type="password")
+    
+    model_choice = st.selectbox("Model", options=["gemini-2.5-flash", "gemini-2.5-pro"], index=0)
+    
     if api_key:
-        st.success("✓ Gemini API key configured")
+        st.success("✓ API Key Configured")
     else:
-        st.warning("⚠️ Gemini API key not configured")
-        api_key = st.text_input(
-            "Gemini API key",
-            type="password",
-            help="Get one at https://aistudio.google.com/apikey",
-        )
-    model = st.selectbox(
-        "Model",
-        options=["gemini-2.5-flash", "gemini-2.5-pro"],
-        index=0,
-        help="Flash is fast and cheap; Pro is slower but reasons more deeply.",
-    )
+        st.warning("⚠️ Key Required")
+
     st.markdown("---")
     st.markdown("### 📚 Sample data")
-    st.caption("No logs handy? Try one of these.")
     samples = sorted(SAMPLES_DIR.glob("*.log")) if SAMPLES_DIR.exists() else []
-    sample_choice = st.selectbox(
-        "Load sample",
-        options=["—"] + [s.name for s in samples],
-    )
+    sample_choice = st.selectbox("Load sample", options=["—"] + [s.name for s in samples])
+    
     st.markdown("---")
     st.caption(f"Neural Architect v{__version__}")
     st.caption("[GitHub](https://github.com/Ravioli201/neural-architect)")
 
-
-# ----------------------------- hero -----------------------------------------
-
+# ----------------------------- Hero -----------------------------------------
 st.markdown(
     """
     <div class="na-hero">
       <h1>🧠 Neural Architect</h1>
-      <p>AI-powered digital forensics. Drop in raw logs — get back a reconstructed
-         attack chain mapped to MITRE ATT&amp;CK in seconds.</p>
+      <p>AI-powered digital forensics. Drop in raw logs — get back a reconstructed attack chain in seconds.</p>
       <div style="margin-top: .8rem;">
-        <span class="na-pill">Gemini 2.5 Flash</span>
+        <span class="na-pill">3D Visualizer</span>
+        <span class="na-pill">Analyst Chatbot</span>
         <span class="na-pill">MITRE ATT&CK v15</span>
-        <span class="na-pill">STIX 2.1 export</span>
-        <span class="na-pill">Open source</span>
       </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-
-# ----------------------------- input ----------------------------------------
-
+# ----------------------------- Input ----------------------------------------
 st.subheader("1. Submit telemetry")
-input_tabs = st.tabs(["📋 Paste", "📁 Upload"])
+input_tabs = st.tabs(["📋 Paste / Sample", "📁 Upload Multi-Logs"])
 
 raw_logs = ""
 with input_tabs[0]:
-    default = ""
-    if sample_choice and sample_choice != "—":
-        default = (SAMPLES_DIR / sample_choice).read_text()
-    raw_logs = st.text_area(
-        "Logs",
-        value=default,
-        height=240,
-        placeholder="Paste syslog, JSONL, Sysmon, Apache, or any plain text logs...",
-        label_visibility="collapsed",
-    )
+    default_val = ""
+    if sample_choice != "—":
+        default_val = (SAMPLES_DIR / sample_choice).read_text()
+    raw_logs = st.text_area("Logs", value=default_val, height=200, placeholder="Paste logs here...", label_visibility="collapsed")
 
 with input_tabs[1]:
-    ups = st.file_uploader(
-        "Upload one or more log files",
-        type=["log", "txt", "json", "jsonl", "csv"],
-        accept_multiple_files=True,
-        help="Upload multiple files and they'll be analyzed together as a single incident.",
-    )
+    ups = st.file_uploader("Upload log files", type=["log", "txt", "json", "jsonl", "csv"], accept_multiple_files=True)
     if ups:
         chunks = []
         for f in ups:
             content = f.read().decode("utf-8", errors="replace")
             chunks.append(f"##### FILE: {f.name} #####\n{content}")
         raw_logs = "\n\n".join(chunks)
-        total = sum(len(c) for c in chunks)
-        st.success(f"Loaded {len(ups)} file(s) ({total:,} chars total)")
-        with st.expander("Files loaded"):
-            for f in ups:
-                st.write(f"• `{f.name}` — {f.size:,} bytes")
-go_button = st.button(
-    "🔍 Reconstruct Attack Chain",
-    type="primary",
-    use_container_width=True,
-    disabled=not raw_logs.strip(),
-)
+        st.success(f"Loaded {len(ups)} file(s)")
 
+go_button = st.button("🔍 Reconstruct Attack Chain", type="primary", use_container_width=True, disabled=not raw_logs.strip())
 
-# ----------------------------- run ------------------------------------------
-
+# ----------------------------- Execution ------------------------------------
 if go_button:
     if not api_key:
-        st.error("Please provide a Gemini API key in the sidebar.")
+        st.error("Please provide a Gemini API key.")
         st.stop()
 
-    try:
-        client = GeminiClient(api_key=api_key, model=model)
-        analyzer = Analyzer(client=client)
-    except GeminiUnavailableError as e:
-        st.error(f"Could not initialize Gemini: {e}")
-        st.stop()
-
-    with st.status("Analyzing telemetry…", expanded=True) as status:
-        st.write("• Detecting log format…")
-        st.write("• Extracting indicators of compromise…")
-        st.write("• Asking Gemini to reconstruct the attack chain…")
+    with st.status("Analyzing Incident...", expanded=True) as status:
         try:
+            client = GeminiClient(api_key=api_key, model=model_choice)
+            analyzer = Analyzer(client=client)
             chain = analyzer.analyze(raw_logs)
-            status.update(label="✅ Reconstruction complete", state="complete")
-        except Exception as e:  # noqa: BLE001 — surface any error to the user
-            status.update(label="❌ Failed", state="error")
+            
+            # Initialize the Chatbot session
+            bot = SOCChatbot(api_key=api_key)
+            st.session_state["chat_session"] = bot.start_session(str(chain))
+            st.session_state["chain"] = chain
+            st.session_state["messages"] = [] # Clear old chat
+            
+            status.update(label="✅ Analysis complete", state="complete")
+        except Exception as e:
+            status.update(label="❌ Analysis failed", state="error")
             st.exception(e)
             st.stop()
 
-    st.session_state["chain"] = chain
-
-
-# ----------------------------- render ---------------------------------------
-
+# ----------------------------- Results --------------------------------------
 chain: AttackChain | None = st.session_state.get("chain")
-if chain is None:
-    st.info("👆 Paste logs or load a sample to get started.")
-    st.stop()
+if chain:
+    st.subheader("2. Reconstructed Incident")
+    
+    # Metrics Row
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Incident ID", chain.incident_id)
+    m2.metric("Severity", chain.severity.value.upper())
+    m3.metric("Events Found", len(chain.events))
+    m4.metric("MITRE Techniques", len(chain.technique_ids))
 
+    # Tabs for the different views
+    res_tabs = st.tabs(["🌐 3D Attack Path", "📑 Detailed Timeline", "💬 Ask the Analyst", "📊 MITRE Heatmap", "📦 Exports"])
 
-st.subheader("2. Reconstructed incident")
+    with res_tabs[0]:
+        st.markdown("### Interactive 3D Attack Graph")
+        fig = render_3d_attack_graph(chain.events)
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Incident", chain.incident_id)
-c2.metric("Severity", chain.severity.value.upper())
-c3.metric("Events", len(chain.events))
-c4.metric("MITRE techniques", len(chain.technique_ids))
+    with res_tabs[1]:
+        st.markdown("### Attack Timeline")
+        for i, ev in enumerate(chain.events, start=1):
+            color = SEVERITY_COLOR.get(ev.severity, "#6366f1")
+            techs = " ".join(f'<span class="na-tech">{t.technique_id}</span>' for t in ev.techniques)
+            st.markdown(f"""
+                <div class="na-event" style="border-left-color:{color};">
+                    <strong>#{i} · {ev.phase.value.replace('_', ' ').title()}</strong><br/>
+                    {ev.description}<br/>{techs}
+                </div>
+            """, unsafe_allow_html=True)
 
-st.markdown(f"**Summary.** {chain.summary}")
-if chain.suspected_actor:
-    st.warning(f"⚠️ Suspected actor: **{chain.suspected_actor}**")
+    with res_tabs[2]:
+        st.markdown("### SOC Analyst Assistant")
+        for m in st.session_state.get("messages", []):
+            with st.chat_message(m["role"]):
+                st.markdown(m["content"])
+        
+        if prompt := st.chat_input("Ask a follow-up about this incident..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
+            bot = SOCChatbot(api_key=api_key)
+            response = bot.ask(st.session_state["chat_session"], prompt)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            with st.chat_message("assistant"):
+                st.markdown(response)
 
+    with res_tabs[3]:
+        st.markdown("### MITRE ATT&CK Tactic Coverage")
+        tactic_counts = {}
+        for ev in chain.events:
+            for t in ev.techniques:
+                tactic_counts[t.tactic.value] = tactic_counts.get(t.tactic.value, 0) + 1
+        
+        if tactic_counts:
+            fig = go.Figure(go.Bar(x=list(tactic_counts.keys()), y=list(tactic_counts.values()), marker_color="#6366f1"))
+            fig.update_layout(height=350, template="plotly_dark", margin=dict(l=0, r=0, t=20, b=50))
+            st.plotly_chart(fig, use_container_width=True)
 
-# ---- timeline
-st.markdown("### Attack timeline")
-for i, ev in enumerate(chain.events, start=1):
-    color = SEVERITY_COLOR.get(ev.severity, "#6366f1")
-    techs = " ".join(
-        f'<span class="na-tech">{t.technique_id}</span>' for t in ev.techniques
-    ) or "<span class='na-tech'>—</span>"
-    ts = ev.timestamp.isoformat() if ev.timestamp else "unknown time"
-    st.markdown(
-        f"""
-        <div class="na-event" style="border-left-color:{color};">
-          <strong>#{i} · {ev.phase.value.replace('_', ' ').title()}</strong>
-          &nbsp;<span style="color:#64748b;">{ts}</span><br/>
-          {ev.description}<br/>
-          {techs}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if ev.evidence:
-        with st.expander("Evidence"):
-            st.code("\n".join(ev.evidence[:10]))
+    with res_tabs[4]:
+        st.markdown("### Export Results")
+        e1, e2, e3 = st.columns(3)
+        e1.download_button("📄 Markdown Report", data=to_markdown_report(chain), file_name=f"{chain.incident_id}.md", use_container_width=True)
+        e2.download_button("🛡️ STIX 2.1 Bundle", data=str(to_stix_bundle(chain).serialize()), file_name=f"{chain.incident_id}.stix.json", use_container_width=True)
+        e3.download_button("📦 Raw JSON", data=json.dumps(chain.model_dump(mode="json"), indent=2), file_name=f"{chain.incident_id}.json", use_container_width=True)
 
-
-# ---- MITRE heatmap (one bar per tactic)
-st.markdown("### MITRE ATT&CK coverage")
-tactic_counts: dict[str, int] = {}
-for ev in chain.events:
-    for t in ev.techniques:
-        tactic_counts[t.tactic.value] = tactic_counts.get(t.tactic.value, 0) + 1
-
-if tactic_counts:
-    ordered = [p.value for p in KillChainPhase if p.value in tactic_counts]
-    fig = go.Figure(
-        go.Bar(
-            x=ordered,
-            y=[tactic_counts[t] for t in ordered],
-            marker_color="#6366f1",
-        )
-    )
-    fig.update_layout(
-        height=300,
-        margin=dict(l=10, r=10, t=20, b=80),
-        xaxis_tickangle=-30,
-        yaxis_title="techniques observed",
-        plot_bgcolor="rgba(0,0,0,0)",
-        paper_bgcolor="rgba(0,0,0,0)",
-    )
-    st.plotly_chart(fig, use_container_width=True)
 else:
-    st.caption("No MITRE techniques mapped.")
-
-
-# ---- IOCs
-st.markdown("### Indicators of compromise")
-if chain.indicators:
-    rows = [{"type": i.type.value, "value": i.value, "context": i.context or ""} for i in chain.indicators]
-    st.dataframe(rows, use_container_width=True, hide_index=True)
-else:
-    st.caption("No IOCs found.")
-
-
-# ---- recommended actions
-if chain.recommended_actions:
-    st.markdown("### Recommended actions")
-    for a in chain.recommended_actions:
-        st.markdown(f"- {a}")
-
-
-# ---- exports
-st.markdown("### 3. Export")
-e1, e2, e3 = st.columns(3)
-with e1:
-    st.download_button(
-        "📄 Markdown report",
-        data=to_markdown_report(chain),
-        file_name=f"{chain.incident_id}.md",
-        mime="text/markdown",
-        use_container_width=True,
-    )
-with e2:
-    st.download_button(
-        "🛡️ STIX 2.1 bundle",
-        data=str(to_stix_bundle(chain).serialize(pretty=True)),
-        file_name=f"{chain.incident_id}.stix.json",
-        mime="application/json",
-        use_container_width=True,
-    )
-with e3:
-    st.download_button(
-        "📦 Raw JSON",
-        data=json.dumps(chain.model_dump(mode="json"), indent=2, default=str),
-        file_name=f"{chain.incident_id}.json",
-        mime="application/json",
-        use_container_width=True,
-    )
-
-if chain.model_notes:
-    st.caption(f"📝 Model notes: {chain.model_notes}")
+    st.info("👆 Submit logs to generate an analysis.")
