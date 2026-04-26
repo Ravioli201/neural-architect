@@ -471,10 +471,11 @@ body{background:#000;color:#fff;font-family:-apple-system,'SF Pro Display',sans-
 .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
 .ttl{font-size:14px;font-weight:600;color:rgba(235,235,245,.85);letter-spacing:-.02em}
 .ctrls{display:flex;align-items:center;gap:10px}
-#playBtn{background:rgba(10,132,255,.12);border:.5px solid rgba(10,132,255,.35);color:#0a84ff;
+#prevBtn,#nextBtn,#playBtn{background:rgba(10,132,255,.12);border:.5px solid rgba(10,132,255,.35);color:#0a84ff;
   border-radius:980px;font-size:11.5px;font-weight:600;padding:5px 14px;cursor:pointer;
   font-family:inherit;letter-spacing:-.01em;transition:background .15s}
-#playBtn:hover{background:rgba(10,132,255,.22)}
+#prevBtn:hover,#nextBtn:hover,#playBtn:hover{background:rgba(10,132,255,.22)}
+#prevBtn:disabled,#nextBtn:disabled{opacity:.35;cursor:not-allowed}
 #ctr{font-size:10.5px;color:rgba(235,235,245,.28);font-variant-numeric:tabular-nums}
 .track{display:flex;align-items:center;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
 .track::-webkit-scrollbar{display:none}
@@ -517,7 +518,9 @@ body{background:#000;color:#fff;font-family:-apple-system,'SF Pro Display',sans-
   <div class="hdr">
     <span class="ttl">Attack story &middot; Step by step</span>
     <div class="ctrls">
+      <button id="prevBtn" onclick="prev()" disabled>&#9664;</button>
       <button id="playBtn" onclick="toggle()">&#9654; Play</button>
+      <button id="nextBtn" onclick="nextStep()" disabled>&#9654;</button>
       <span id="ctr">0 / 0</span>
     </div>
   </div>
@@ -546,7 +549,11 @@ DATA.forEach((d,i)=>{
   const dot=document.createElement("div");dot.className="dot";dot.id="d"+i;dot.onclick=()=>jump(i);dots.appendChild(dot);
 });
 let cur=-1,playing=false,tmr=null;
-function upd(){document.getElementById("ctr").textContent=Math.max(0,cur+1)+" / "+DATA.length;}
+function upd(){
+  document.getElementById("ctr").textContent=Math.max(0,cur+1)+" / "+DATA.length;
+  document.getElementById("prevBtn").disabled = cur <= 0;
+  document.getElementById("nextBtn").disabled = cur >= DATA.length-1;
+}
 function show(idx){
   cur=idx;upd();
   DATA.forEach((_,i)=>{
@@ -565,9 +572,34 @@ function show(idx){
     else if(i>0)document.getElementById("c"+i).classList.remove("vis");
   });
 }
-function jump(i){clearInterval(tmr);playing=false;document.getElementById("playBtn").textContent="&#9654; Play";for(let j=0;j<=i;j++)show(j);}
+function jump(i){
+  clearInterval(tmr);
+  playing=false;
+  document.getElementById("playBtn").textContent="&#9654; Play";
+  for(let j=0;j<=i;j++)show(j);
+}
+function prev(){
+  if(cur>0){
+    clearInterval(tmr);
+    playing=false;
+    document.getElementById("playBtn").textContent="&#9654; Play";
+    show(cur-1);
+  }
+}
+function nextStep(){
+  if(cur < DATA.length-1){
+    clearInterval(tmr);
+    playing=false;
+    document.getElementById("playBtn").textContent="&#9654; Play";
+    show(cur+1);
+  }
+}
 function toggle(){
-  if(playing){clearInterval(tmr);playing=false;document.getElementById("playBtn").textContent="&#9654; Play";}
+  if(playing){
+    clearInterval(tmr);
+    playing=false;
+    document.getElementById("playBtn").textContent="&#9654; Play";
+  }
   else{
     if(cur>=DATA.length-1)cur=-1;
     playing=true;
@@ -578,6 +610,19 @@ function toggle(){
     },1200);
   }
 }
+document.addEventListener("keydown", (event) => {
+  if (event.defaultPrevented) return;
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    prev();
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault();
+    nextStep();
+  } else if (event.key === " " || event.key === "Spacebar") {
+    event.preventDefault();
+    toggle();
+  }
+});
 upd();setTimeout(toggle,700);
 </script></body></html>"""
 
