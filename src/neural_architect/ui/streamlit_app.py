@@ -84,14 +84,20 @@ st.markdown(
 with st.sidebar:
     st.markdown("### ⚙️ Configuration")
     # Resolve the API key in priority order: Streamlit secrets → env var → empty.
+    # Accept either GEMINI_API_KEY or GOOGLE_API_KEY (Google's SDK uses both names).
     _secret_key = ""
     try:
-        _secret_key = st.secrets.get("GEMINI_API_KEY", "")
-        st.sidebar.caption(f"DEBUG secrets keys: {list(st.secrets.keys())}")
-        st.sidebar.caption(f"DEBUG key length: {len(_secret_key)}")
-    except Exception as e:
-        st.sidebar.caption(f"DEBUG secrets error: {e}")
-    api_key = _secret_key or os.environ.get("GEMINI_API_KEY", "")
+        _secret_key = (
+            st.secrets.get("GEMINI_API_KEY", "")
+            or st.secrets.get("GOOGLE_API_KEY", "")
+        )
+    except Exception:
+        pass
+    api_key = (
+        _secret_key
+        or os.environ.get("GEMINI_API_KEY", "")
+        or os.environ.get("GOOGLE_API_KEY", "")
+    )
     if api_key:
         st.success("✓ Gemini API key configured")
     else:
