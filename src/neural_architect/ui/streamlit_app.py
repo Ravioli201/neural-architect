@@ -87,11 +87,11 @@ with st.sidebar:
     _secret_key = ""
     try:
         _secret_key = st.secrets.get("GEMINI_API_KEY", "")
-    except Exception:
-        # st.secrets raises if no secrets.toml exists locally — that's fine.
-        pass
+        st.sidebar.caption(f"DEBUG secrets keys: {list(st.secrets.keys())}")
+        st.sidebar.caption(f"DEBUG key length: {len(_secret_key)}")
+    except Exception as e:
+        st.sidebar.caption(f"DEBUG secrets error: {e}")
     api_key = _secret_key or os.environ.get("GEMINI_API_KEY", "")
-
     if api_key:
         st.success("✓ Gemini API key configured")
     else:
