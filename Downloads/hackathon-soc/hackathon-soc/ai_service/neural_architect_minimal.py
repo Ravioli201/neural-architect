@@ -476,9 +476,13 @@ body{background:#000;color:#fff;font-family:-apple-system,'SF Pro Display',sans-
   font-family:inherit;letter-spacing:-.01em;transition:background .15s}
 #prevBtn:hover,#nextBtn:hover,#playBtn:hover{background:rgba(10,132,255,.22)}
 #prevBtn:disabled,#nextBtn:disabled{opacity:.35;cursor:not-allowed}
+#stepLbl{font-size:10px;color:rgba(235,235,245,.6);margin-right:8px;white-space:nowrap;}
 #ctr{font-size:10.5px;color:rgba(235,235,245,.28);font-variant-numeric:tabular-nums}
 .track{display:flex;align-items:center;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}
 .track::-webkit-scrollbar{display:none}
+.dot{width:22px;height:22px;min-width:22px;border-radius:50%;background:rgba(255,255,255,.1);cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,.65);}
+.dot.active{background:#0a84ff;transform:scale(1.25);color:#fff;}
+.dot.past{background:rgba(10,132,255,.32);color:#fff;}
 .node{flex-shrink:0;width:175px;opacity:0;transform:translateY(20px) scale(.95);
   transition:opacity .45s ease,transform .45s cubic-bezier(.34,1.56,.64,1)}
 .node.vis{opacity:1;transform:none}
@@ -506,10 +510,10 @@ body{background:#000;color:#fff;font-family:-apple-system,'SF Pro Display',sans-
   flex:1;opacity:0;transition:opacity .35s ease .15s}
 .carr{color:rgba(255,255,255,.12);font-size:9px;opacity:0;transition:opacity .35s ease .25s}
 .conn.vis .cline,.conn.vis .carr{opacity:1}
-.dots{display:flex;gap:5px;justify-content:center;margin-top:20px}
-.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.1);cursor:pointer;transition:all .3s}
-.dot.active{background:#0a84ff;transform:scale(1.35)}
-.dot.past{background:rgba(10,132,255,.32)}
+.dots{display:flex;gap:8px;justify-content:center;margin-top:20px}
+.dot{width:22px;height:22px;min-width:22px;border-radius:50%;background:rgba(255,255,255,.1);cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,.65);}
+.dot.active{background:#0a84ff;transform:scale(1.25);color:#fff;}
+.dot.past{background:rgba(10,132,255,.32);color:#fff;}
 @keyframes pulse{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1.45);opacity:0}}
 .ring{position:absolute;inset:-4px;border:1px solid rgba(10,132,255,.28);border-radius:14px;
   animation:pulse 1.7s ease-out infinite;pointer-events:none}
@@ -519,7 +523,7 @@ body{background:#000;color:#fff;font-family:-apple-system,'SF Pro Display',sans-
     <span class="ttl">Attack story &middot; Step by step</span>
     <div class="ctrls">
       <button id="prevBtn" onclick="prev()" disabled>&#9664;</button>
-      <button id="playBtn" onclick="toggle()">&#9654; Play</button>
+      <button id="playBtn" onclick="toggle()">Play</button>
       <button id="nextBtn" onclick="nextStep()" disabled>&#9654;</button>
       <span id="ctr">0 / 0</span>
     </div>
@@ -546,11 +550,12 @@ DATA.forEach((d,i)=>{
     +'<div class="evt">'+(d.event||"")+'</div><div class="ts">'+(d.time||"")+'</div>'
     +'<div class="srow"><span class="slbl">SEV</span><div class="strack"><div class="sfill" style="background:'+s+';"></div></div></div></div>';
   track.appendChild(n);
-  const dot=document.createElement("div");dot.className="dot";dot.id="d"+i;dot.onclick=()=>jump(i);dots.appendChild(dot);
+  const dot=document.createElement("div");dot.className="dot";dot.id="d"+i;dot.textContent = i + 1;dot.onclick=()=>jump(i);dots.appendChild(dot);
 });
 let cur=-1,playing=false,tmr=null;
 function upd(){
   document.getElementById("ctr").textContent=Math.max(0,cur+1)+" / "+DATA.length;
+  document.getElementById("stepLbl").textContent = "Step "+Math.max(0,cur+1)+" of "+DATA.length;
   document.getElementById("prevBtn").disabled = cur <= 0;
   document.getElementById("nextBtn").disabled = cur >= DATA.length-1;
 }
@@ -575,7 +580,7 @@ function show(idx){
 function jump(i){
   clearInterval(tmr);
   playing=false;
-  document.getElementById("playBtn").textContent="&#9654; Play";
+  document.getElementById("playBtn").textContent="Play";
   for(let j=0;j<=i;j++)show(j);
 }
 function prev(){
@@ -590,7 +595,7 @@ function nextStep(){
   if(cur < DATA.length-1){
     clearInterval(tmr);
     playing=false;
-    document.getElementById("playBtn").textContent="&#9654; Play";
+    document.getElementById("playBtn").textContent="Play";
     show(cur+1);
   }
 }
@@ -598,15 +603,15 @@ function toggle(){
   if(playing){
     clearInterval(tmr);
     playing=false;
-    document.getElementById("playBtn").textContent="&#9654; Play";
+    document.getElementById("playBtn").textContent="Play";
   }
   else{
     if(cur>=DATA.length-1)cur=-1;
     playing=true;
-    document.getElementById("playBtn").textContent="&#9646;&#9646; Pause";
+    document.getElementById("playBtn").textContent="Pause";
     tmr=setInterval(()=>{
       if(cur<DATA.length-1){show(cur+1);}
-      else{clearInterval(tmr);playing=false;document.getElementById("playBtn").textContent="&#8635; Replay";}
+      else{clearInterval(tmr);playing=false;document.getElementById("playBtn").textContent="Play";}
     },1200);
   }
 }
