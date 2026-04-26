@@ -106,17 +106,21 @@ class GeminiClient:
         ) from last_err
 
     @staticmethod
-    def _parse(response: Any) -> AttackChain:
-        # The new SDK exposes parsed output directly when response_schema is set.
-        parsed = getattr(response, "parsed", None)
-        if isinstance(parsed, AttackChain):
-            return parsed
-
-        text = getattr(response, "text", None) or ""
-        if not text:
-            raise ValueError("Gemini returned an empty response.")
-        try:
-            data = json.loads(text)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Gemini returned non-JSON output: {text[:200]}...") from e
-        return AttackChain.model_validate(data)
+    def _parse(self, response):
+    text = response.text
+    # 1. Strip Markdown code blocks if Gemini wrapped the JSON
+    if "```json" in text:
+        text = text.split("```json")[1].split("```")[0].strip()
+    elif "```" in text:
+        text = text.split("```")[1].split("```")[0].strip()
+    
+    # 2. Try to find the first '{' and last '}' to ignore extra text
+    try:
+        start_idx = text.find('{')
+        end_idx = text.rfind('}') + 1
+        if start_idx != -1 and end_idx != 0:
+            text = text[start_idx:end_idx]
+        
+        return json.loads(text)
+    except Exception as e:
+        raise ValueError(f"Gemini returned non-JSON output: {text[:200]}...") from e
