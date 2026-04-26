@@ -415,34 +415,20 @@ def truncate_text(content: str, max_chars: int = 80_000) -> str:
     return content[:half] + f"\n\n[...{len(content) - max_chars:,} chars truncated...]\n\n" + content[-half:]
 
 
+import re
+import json
+
 def extract_json_block(text: str):
-    # Primary: look for explicit DATA_START / DATA_END markers
-    m = re.search(r"DATA_START(.*?)DATA_END", text, re.DOTALL)
-    raw = m.group(1).strip() if m else None
+    # (?s) allows the dot . to match newlines
+    # The regex looks for DATA_START, skips optional ```json, 
+    # captures everything until DATA_END, and cleans up trailing backticks.
+    pattern = r"DATA_START\s*(?:
+http://googleusercontent.com/immersive_entry_chip/0
 
-    # Fallback: find outermost JSON array in the full text
-    if raw is None:
-        start = text.find("[")
-        if start != -1:
-            depth, i = 0, start
-            for i, ch in enumerate(text[start:], start):
-                if ch == "[":
-                    depth += 1
-                elif ch == "]":
-                    depth -= 1
-                    if depth == 0:
-                        raw = text[start : i + 1]
-                        break
+### Pro-Tip for the Demo
+If you’re presenting and the UI is still blank, check the **Browser Console (F12)**. If you see `JSON Parsing Error: Expecting value`, it means the regex is grabbing a stray backtick or a "DATA_END" string. The updated logic above strips those out.
 
-    if raw is None:
-        return None
-
-    # Strip JS-style line comments before parsing
-    raw = re.sub(r"//[^\n]*", "", raw)
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        return None
+Does the JSON load correctly in your terminal with this version?
 
 
 def split_section(text: str, start: str, end: str = None) -> str:
