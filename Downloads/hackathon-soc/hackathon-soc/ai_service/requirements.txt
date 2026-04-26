@@ -2,5 +2,5 @@ streamlit
 google-generativeai
 pandas
 plotly
-fpdf2
+fpdf
 python-dotenv
