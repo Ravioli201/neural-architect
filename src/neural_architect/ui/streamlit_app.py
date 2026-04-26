@@ -83,12 +83,24 @@ st.markdown(
 
 with st.sidebar:
     st.markdown("### ⚙️ Configuration")
-    api_key = st.text_input(
-        "Gemini API key",
-        value=os.environ.get("GEMINI_API_KEY", ""),
-        type="password",
-        help="Get one at https://aistudio.google.com/apikey",
-    )
+    # Resolve the API key in priority order: Streamlit secrets → env var → empty.
+    _secret_key = ""
+    try:
+        _secret_key = st.secrets.get("GEMINI_API_KEY", "")
+    except Exception:
+        # st.secrets raises if no secrets.toml exists locally — that's fine.
+        pass
+    api_key = _secret_key or os.environ.get("GEMINI_API_KEY", "")
+
+    if api_key:
+        st.success("✓ Gemini API key configured")
+    else:
+        st.warning("⚠️ Gemini API key not configured")
+        api_key = st.text_input(
+            "Gemini API key",
+            type="password",
+            help="Get one at https://aistudio.google.com/apikey",
+        )
     model = st.selectbox(
         "Model",
         options=["gemini-2.5-flash", "gemini-2.5-pro"],
