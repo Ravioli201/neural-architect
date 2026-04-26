@@ -387,7 +387,7 @@ def stream_gemini(prompt: str):
         yield f"\n\nError: {e}"
 
 
-def chat_with_gemini(question: str, context: str) -> str:
+def chat_with_gemini(question: str, context: str, ui_threshold: int) -> str:
     if not gemini_ok:
         return "Gemini API key not configured."
     try:
@@ -399,6 +399,10 @@ def chat_with_gemini(question: str, context: str) -> str:
             "You are a security analyst assistant. Answer the user's question concisely "
             "using the forensic analysis context below. If the context does not contain "
             "the answer, say so plainly.\n\n"
+            "--- CURRENT UI STATE ---\n"
+            f"The user currently has the 'Confidence threshold' slider set to: {ui_threshold}%\n"
+            "Findings below this confidence level are suppressed from the report.\n"
+            "------------------------\n\n"
             f"ANALYSIS CONTEXT:\n{context or '(no analysis run yet)'}\n\n"
             f"QUESTION: {question}"
         )
