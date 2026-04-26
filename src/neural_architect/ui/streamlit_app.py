@@ -147,15 +147,23 @@ with input_tabs[0]:
     )
 
 with input_tabs[1]:
-    up = st.file_uploader(
-        "Upload a log file",
+    ups = st.file_uploader(
+        "Upload one or more log files",
         type=["log", "txt", "json", "jsonl", "csv"],
-        accept_multiple_files=False,
+        accept_multiple_files=True,
+        help="Upload multiple files and they'll be analyzed together as a single incident.",
     )
-    if up is not None:
-        raw_logs = up.read().decode("utf-8", errors="replace")
-        st.success(f"Loaded {up.name} ({len(raw_logs):,} chars)")
-
+    if ups:
+        chunks = []
+        for f in ups:
+            content = f.read().decode("utf-8", errors="replace")
+            chunks.append(f"##### FILE: {f.name} #####\n{content}")
+        raw_logs = "\n\n".join(chunks)
+        total = sum(len(c) for c in chunks)
+        st.success(f"Loaded {len(ups)} file(s) ({total:,} chars total)")
+        with st.expander("Files loaded"):
+            for f in ups:
+                st.write(f"• `{f.name}` — {f.size:,} bytes")
 go_button = st.button(
     "🔍 Reconstruct Attack Chain",
     type="primary",
