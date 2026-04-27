@@ -1,0 +1,38 @@
+{
+  "name": "Neural Architect",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["README.md"]
+    },
+    "vscode": {
+      "settings": {
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"]
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "PYTHONPATH": "${containerWorkspaceFolder}/src"
+  },
+  "updateContentCommand": "pip3 install --user --upgrade pip && pip3 install --user -r requirements.txt && echo '✅ Requirements installed'",
+  "postAttachCommand": {
+    "server": "streamlit run src/neural_architect/ui/streamlit_app.py --server.enableCORS false --server.enableXsrfProtection false"
+  },
+  "portsAttributes": {
+    "8501": {
+      "label": "Neural Architect UI",
+      "onAutoForward": "openPreview"
+    },
+    "8000": {
+      "label": "Neural Architect API",
+      "onAutoForward": "ignore"
+    }
+  },
+  "forwardPorts": [8501, 8000]
+}

