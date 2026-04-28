@@ -1,9 +1,7 @@
 """Interactive SOC analyst chatbot.
 
 Anchors a Gemini chat session to a specific reconstructed incident so an
-analyst can ask follow-ups — "why is T1566.001 only medium confidence?",
-"what should I do first?", "what's the right Sigma rule for this?" —
-without re-supplying the whole context every turn.
+analyst can ask follow-ups without re-supplying the whole context.
 """
 from __future__ import annotations
 
@@ -14,6 +12,15 @@ from google import genai
 from google.genai import types
 
 DEFAULT_MODEL = "gemini-2.5-flash"
+
+# Module-level cache so Streamlit reruns reuse the same underlying httpx client.
+_client_cache: dict[str, genai.Client] = {}
+
+
+def _get_client(api_key: str) -> genai.Client:
+    if api_key not in _client_cache:
+        _client_cache[api_key] = genai.Client(api_key=api_key)
+    return _client_cache[api_key]
 
 
 class SOCChatbot:
@@ -30,15 +37,11 @@ class SOCChatbot:
                 "GEMINI_API_KEY is required for the chatbot. "
                 "Get one at https://aistudio.google.com/apikey."
             )
-        self._client = genai.Client(api_key=key)
+        self._client = _get_client(key)
         self._model = model or os.environ.get("GEMINI_MODEL", DEFAULT_MODEL)
 
     def start_session(self, attack_chain_summary: str):
-        """Begin a chat session conditioned on a specific incident summary.
-
-        The summary is wired into the system prompt so the model has the
-        incident context for every subsequent message in this session.
-        """
+        """Begin a chat session conditioned on a specific incident summary."""
         system_instruction = (
             "You are an expert SOC Tier-3 analyst assisting another analyst "
             "with an incident they just reconstructed.\n\n"
@@ -46,7 +49,7 @@ class SOCChatbot:
             f"{attack_chain_summary}\n\n"
             "Answer questions accurately, suggest concrete remediation steps, "
             "and explain MITRE ATT&CK techniques in plain language. If you "
-            "do not know, say so — never invent IOCs or attribution."
+            "do not know, say so - never invent IOCs or attribution."
         )
         return self._client.chats.create(
             model=self._model,

@@ -75,7 +75,7 @@ class GeminiClient:
             response_mime_type="application/json",
             response_schema=AttackChain,
             temperature=0.2,
-            max_output_tokens=8192,
+            max_output_tokens=65536,
         )
 
         last_err: Exception | None = None
@@ -107,13 +107,8 @@ class GeminiClient:
 
     @staticmethod
     def _parse(response: Any) -> AttackChain:
-        """Convert a Gemini response into a validated AttackChain.
-
-        When ``response_schema`` is set, the SDK populates ``response.parsed``
-        with an instance of the requested Pydantic model — that's the happy
-        path. We fall back to hand-parsing the JSON text only if the SDK
-        couldn't (older models, malformed output, or a content filter trim).
-        """
+        """Convert a Gemini response into a validated AttackChain."""
+        # Happy path: SDK already parsed it against the schema.
         parsed = getattr(response, "parsed", None)
         if isinstance(parsed, AttackChain):
             return parsed
@@ -122,22 +117,30 @@ class GeminiClient:
         if not text:
             raise ValueError("Gemini returned an empty response.")
 
-        # Strip Markdown fences if the model wrapped the JSON.
+        # Strip Markdown fences.
         if "```json" in text:
             text = text.split("```json", 1)[1].split("```", 1)[0].strip()
         elif "```" in text:
             text = text.split("```", 1)[1].split("```", 1)[0].strip()
 
-        # Trim any preamble/trailing prose around the JSON object.
+        # Trim preamble/trailing prose around the JSON object.
         start = text.find("{")
         end = text.rfind("}")
         if start == -1 or end == -1 or end < start:
+            if start != -1 and end == -1:
+                raise ValueError("Gemini response was truncated. Try a smaller log.")
             raise ValueError(f"Gemini returned non-JSON output: {text[:200]!r}")
         text = text[start : end + 1]
+
+        # Clean up common Gemini quirks before parsing.
+        text = text.replace("\\'", "'")
 
         try:
             data = json.loads(text)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Gemini returned invalid JSON: {text[:200]!r}") from e
+            raise ValueError(
+                f"Gemini returned invalid JSON near char {e.pos}: "
+                f"{text[max(0, e.pos-50):e.pos+50]!r}"
+            ) from e
 
         return AttackChain.model_validate(data)
