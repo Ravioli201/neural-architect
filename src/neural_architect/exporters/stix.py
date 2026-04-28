@@ -12,7 +12,6 @@ import stix2
 
 from neural_architect.core.models import (
     AttackChain,
-    Indicator as NaIndicator,
     IndicatorType,
 )
 

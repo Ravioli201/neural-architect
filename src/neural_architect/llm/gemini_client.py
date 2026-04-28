@@ -137,7 +137,7 @@ class GeminiClient:
 
         try:
             data = json.loads(text)
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
             raise ValueError(
                 f"Gemini returned invalid JSON near char {e.pos}: "
                 f"{text[max(0, e.pos-50):e.pos+50]!r}"
