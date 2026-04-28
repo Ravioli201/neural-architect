@@ -6,6 +6,8 @@
 
 Drop in raw logs — get back a timeline, a kill-chain narrative, scored MITRE techniques, indicators of compromise, and a SOC-ready STIX 2.1 bundle.
 
+![Neural Architect dashboard](assets/hero.png)
+
 [![CI](https://github.com/Ravioli201/neural-architect/actions/workflows/ci.yml/badge.svg)](https://github.com/Ravioli201/neural-architect/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-8B5CF6)
