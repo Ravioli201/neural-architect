@@ -26,9 +26,9 @@ Tier-1 SOC analysts spend most of their day doing the same thing: staring at pag
 
 ## Demo
 
-A 30–60 second walkthrough is in [`docs/demo_video_script.md`](docs/demo_video_script.md). Once recorded, drop the rendered GIF into `assets/demo.gif` and uncomment the image below.
+https://github.com/Ravioli201/neural-architect/raw/main/assets/demo.mp4
 
-<!-- ![Neural Architect end-to-end walkthrough](assets/demo.gif) -->
+A scripted walkthrough is also in [`docs/demo_video_script.md`](docs/demo_video_script.md).
 
 ## How it works
 
