@@ -90,7 +90,7 @@ class GeminiClient:
             except (ValueError, json.JSONDecodeError):
                 # Schema/parse errors are not retryable — the model produced bad JSON.
                 raise
-            except Exception:  # noqa: BLE001 — we want to retry transient API errors
+            except Exception as e:  # noqa: BLE001 — we want to retry transient API errors
                 last_err = e
                 log.warning(
                     "Gemini call failed (attempt %d/%d): %s",
@@ -137,10 +137,10 @@ class GeminiClient:
 
         try:
             data = json.loads(text)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             raise ValueError(
                 f"Gemini returned invalid JSON near char {e.pos}: "
                 f"{text[max(0, e.pos-50):e.pos+50]!r}"
-            )
+            ) from e
 
         return AttackChain.model_validate(data)
